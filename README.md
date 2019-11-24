@@ -24,7 +24,7 @@ Set your preferences in environment variable.
 | Variable | Description |
 | --- | --- |
 | **RPC** | your RPC-token, e.g. Infura (https:// should be present) |
-| **PRIV_LEY** | your private key |
+| **PRIV_KEY** | your private key |
 | **CONFIRMATIONS** | number of blocks placed after one that contains our transaction |
 | **TARGET** | desired amount of transactions |
 | **TARGET_TIME** | amount of time in seconds assigned to **TARGET** |
@@ -65,19 +65,19 @@ The application consists of two modules: *config.py* and *counter_reworked.py*.
 
 ## Log format
 The application writes its log in console with following order of variables:
-iteration number;
-current time;
-nonce, with which the program works in this iteration;
-current gas price;
-status / type of event;
-transaction hash.
+* iteration number;
+* current time;
+* nonce, with which the program works in this iteration;
+* current gas price;
+* status / type of event;
+* transaction hash.
 
 There are following statuses:
-**Pending** - transaction was sent and added to pending[];
-**Mined** - transaction with that hash was mined, and now it's going to wait for its confirmation;
-**Success** - required amount of confirmations was achieved, after that the program switches to next iteration.
+* **Pending** - transaction was sent and added to pending[];
+* **Mined** - transaction with that hash was mined, and now it's going to wait for its confirmation;
+* **Success** - required amount of confirmations was achieved, after that the program switches to next iteration.
 
-**Header** - service status, used to print the header of the log once in some period of time. 
+**Header** - service status, used to print the header of the log once in some period of time.
 
 ## Graphic illustrations
 
