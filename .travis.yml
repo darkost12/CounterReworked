@@ -1,0 +1,7 @@
+language: python
+python:
+    - "3.7"
+install:
+    pip install web3 flake8
+script:
+    flake8 $(git ls-files '*.py')

@@ -1,0 +1,5 @@
+.mermaid
+.git
+__pycache__/
+.helper
+.env
