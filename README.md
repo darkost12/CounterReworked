@@ -63,6 +63,22 @@ The application consists of two modules: *config.py* and *counter_reworked.py*.
 ## Tests and CI
 *This paragraph is under construction.*
 
+## Log format
+The application writes its log in console with following order of variables:
+iteration number;
+current time;
+nonce, with which the program works in this iteration;
+current gas price;
+status / type of event;
+transaction hash.
+
+There are following statuses:
+**Pending** - transaction was sent and added to pending[];
+**Mined** - transaction with that hash was mined, and now it's going to wait for its confirmation;
+**Success** - required amount of confirmations was achieved, after that the program switches to next iteration.
+
+**Header** - service status, used to print the header of the log once in some period of time. 
+
 ## Graphic illustrations
 
 ### Logic representation

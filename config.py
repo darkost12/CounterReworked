@@ -5,7 +5,13 @@ import sys
 import os
 from eth_account import Account
 
-
+""" Gets the required variable from the environment. Closes the program with
+    error if it's not set.
+Args:
+    name (string) - The name of required environment variable.
+Return:
+    var (respective type) - The value of the variable.
+    """
 def get_env_var(name):
     var = os.getenv(name)
     if var is None:

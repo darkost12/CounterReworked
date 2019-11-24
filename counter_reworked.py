@@ -129,6 +129,9 @@ def process_transaction(gas_price, nonce):
         # Web3 hasn't updated the nonce yet.
         if "replacement transaction underpriced" in str(error):
             return None
+        if "nonce too low" in str(error):
+            return None
+        raise error
 
 
 def process_iteration(iteration, current_price, global_start, last_tx_time):
