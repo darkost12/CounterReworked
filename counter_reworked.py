@@ -14,7 +14,7 @@ from config import (
 )
 
 
-def get_transaction(tx_hash):
+def get_transaction_and_receipt(tx_hash):
     """ Function that tries to get the transaction receipt.
     Args:
         hash (hex string) - Hash of transaction to be checked.
@@ -23,15 +23,17 @@ def get_transaction(tx_hash):
             exist.
     """
     try:
+        tx_inst = web3.eth.getTransaction(tx_hash)
         tx_receipt = web3.eth.getTransactionReceipt(tx_hash)
-        tx = web3.eth.getTransaction(tx_hash)
-        return tx, tx_receipt
+        return tx_inst, tx_receipt
     except TransactionNotFound:
         return None, None
     except TypeError as error:
         if "Exactly one of the passed values can be specified." in str(error):
             return None, None
-        raise error
+    except Exception:
+        print("Unpredicted exception has occured")
+        raise
 
 
 def await_confirmations(block_hash):
@@ -49,19 +51,21 @@ def await_confirmations(block_hash):
         except BlockNotFound:
             # Fork occured.
             return False
+        except Exception:
+            print("Unpredicted exception has occured")
+            raise
         last_block = web3.eth.blockNumber
         if (last_block - block_number) >= CONFIRMATIONS:
             return True
         time.sleep(3)
 
 
-def increase_price(current_price, current_nonce, start, pending):
+def increase_price(current_price, current_nonce, pending):
     """ Function that increases the gas price. Is called periodically
         according to time spent in this iteration.
     Args:
         current_price (int) - Current gas price in Wei;
         current_nonce (int) - Current nonce;
-        start (float/Unix format) - Time of iteration's start;
         pending[] - Array of transactions sent with this nonce (in case if
             transaction with lower price would be mined before).
     Return:
@@ -80,8 +84,9 @@ def increase_price(current_price, current_nonce, start, pending):
         if "known transaction" in str(error):
             current_price += int(current_price / 10)
             return current_price, pending
-        raise error
-
+    except Exception:
+        print("Unpredicted exception has occured")
+        raise
     return current_price, pending
 
 
@@ -121,10 +126,10 @@ def process_transaction(gas_price, nonce):
         (Hex string) or None - Transaction hash or None if error occured.
     """
     try:
-        tx = INSTANCE.functions.increment().buildTransaction(
-            {'gasPrice': gas_price, 'nonce': nonce}
+        tx_builder = INSTANCE.functions.increment().buildTransaction(
+            {"gasPrice": gas_price, "nonce": nonce}
         )
-        return web3.eth.sendTransaction(tx)
+        return web3.eth.sendTransaction(tx_builder)
     except ValueError as error:
         # Web3 hasn't updated the nonce yet.
         if "replacement transaction underpriced" in str(error):
@@ -150,6 +155,7 @@ def process_iteration(iteration, current_price, global_start, last_tx_time):
             iteration.
     """
     in_pending = 1
+    current_progress = iteration + 1
     current_price = adjust_price(
         iteration, current_price, global_start, last_tx_time
     )
@@ -162,14 +168,14 @@ def process_iteration(iteration, current_price, global_start, last_tx_time):
         else:
             break
     time_start = time.time()
-    if (((iteration + 1) % 10 == 0) and (iteration is not (TARGET - 1))) or (
+    if ((current_progress % 10 == 0) and (iteration is not (TARGET - 1))) or (
         iteration == 0
     ):
         status = "Header"
     else:
         status = "Pending"
     print_log(
-        iteration + 1,
+        current_progress,
         time.ctime(),
         current_nonce,
         current_price,
@@ -178,11 +184,11 @@ def process_iteration(iteration, current_price, global_start, last_tx_time):
     )
     while True:
         for some_tx in pending:
-            tx, tx_receipt = get_transaction(some_tx)
-            if (tx_receipt is not None) and (tx is not None):
-                current_price = tx.gasPrice
+            tx_inst, tx_receipt = get_transaction_and_receipt(some_tx)
+            if tx_receipt is not None:
+                current_price = tx_inst.gasPrice
                 print_log(
-                    iteration + 1,
+                    current_progress,
                     time.ctime(),
                     current_nonce,
                     current_price,
@@ -190,10 +196,9 @@ def process_iteration(iteration, current_price, global_start, last_tx_time):
                     some_tx,
                 )
                 tx_block_hash = tx_receipt.blockHash
-                if await_confirmations(tx_block_hash) is False:
+                if not await_confirmations(tx_block_hash):
                     # The fork occured. Rolling back to txs in pending
                     continue
-                current_progress = str(iteration + 1)
                 current_time = time.ctime()
                 print_log(
                     current_progress,
@@ -208,10 +213,10 @@ def process_iteration(iteration, current_price, global_start, last_tx_time):
         if (time.time() - time_start) >= 25 * in_pending:
             in_pending += 1
             current_price, pending = increase_price(
-                current_price, current_nonce, time_start, pending
+                current_price, current_nonce, pending
             )
             print_log(
-                iteration + 1,
+                current_progress,
                 time.ctime(),
                 current_nonce,
                 current_price,
@@ -236,7 +241,7 @@ def print_log(progress, time, nonce, price, status, tx_hash):
     # First time it print the header itself, second - the information itself.
     if status == "Header":
         print(
-            ' {} | {} | {} | {} | {} | {} '.format(
+            " {} | {} | {} | {} | {} | {} ".format(
                 "#".ljust(len(str(progress))),
                 "Date & Time".ljust(len(time)),
                 "Nonce".ljust(7),
@@ -247,7 +252,7 @@ def print_log(progress, time, nonce, price, status, tx_hash):
         )
         status = "Pending"
     print(
-        ' {} | {} | {} | {} | {} | {}'.format(
+        " {} | {} | {} | {} | {} | {}".format(
             progress,
             time,
             str(nonce).ljust(7),

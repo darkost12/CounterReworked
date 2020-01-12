@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 import json
-from web3 import Web3
 import sys
 import os
+from web3 import Web3
 from eth_account import Account
 
 
-def get_env_var(name):
-    """ Gets the required variable from the environment. Closes the program with
-        error if it's not set.
+def getenv_or_exit(name):
+    """ Gets the required variable from the environment. Closes the application
+    with error if it's not set.
     Args:
         name (string) - The name of required environment variable.
     Return:
@@ -22,23 +22,23 @@ def get_env_var(name):
 
 
 # Establishes the web3 provider. Also gets the average gas price.
-web3 = Web3(Web3.HTTPProvider(get_env_var("RPC")))
+web3 = Web3(Web3.HTTPProvider(getenv_or_exit("RPC")))
 if web3.isConnected():
     print("Connected to the network!")
 else:
     sys.exit("Could not connect to network. Check your RPC settings.")
 
 
-CONFIRMATIONS = int(get_env_var("CONFIRMATIONS"))
-TARGET = int(get_env_var("TARGET"))
-TARGET_TIME = int(get_env_var("TARGET_TIME"))
-ADDRESS = get_env_var("ADDRESS")
+CONFIRMATIONS = int(getenv_or_exit("CONFIRMATIONS"))
+TARGET = int(getenv_or_exit("TARGET"))
+TARGET_TIME = int(getenv_or_exit("TARGET_TIME"))
+ADDRESS = getenv_or_exit("ADDRESS")
 if web3.isAddress(ADDRESS) is False:
     if web3.isChecksumAddress(ADDRESS) is False:
         sys.exit("Invalid ADDRESS granted")
 else:
     ADDRESS = web3.toChecksumAddress(ADDRESS)
-PRIV_KEY = get_env_var("PRIV_KEY")
+PRIV_KEY = getenv_or_exit("PRIV_KEY")
 ACCOUNT = Account.privateKeyToAccount(PRIV_KEY)
 
 
